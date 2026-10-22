@@ -8,6 +8,10 @@
       "model": "Post",
       "namespace": "__unbound__"
     },
+    "sessions": {
+      "model": "Session",
+      "namespace": "__unbound__"
+    },
     "users": {
       "model": "User",
       "namespace": "__unbound__"
@@ -26,17 +30,17 @@
                   "kind": "scalar"
                 }
               },
-              "authorId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "mongo/objectId@1",
-                  "kind": "scalar"
-                }
-              },
               "content": {
                 "nullable": true,
                 "type": {
                   "codecId": "mongo/string@1",
+                  "kind": "scalar"
+                }
+              },
+              "creatorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "mongo/objectId@1",
                   "kind": "scalar"
                 }
               },
@@ -49,12 +53,12 @@
               }
             },
             "relations": {
-              "author": {
+              "creator": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "authorId"
+                    "creatorId"
                   ],
                   "targetFields": [
                     "_id"
@@ -68,6 +72,66 @@
             },
             "storage": {
               "collection": "posts"
+            }
+          },
+          "Session": {
+            "fields": {
+              "_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "mongo/objectId@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "mongo/date@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "mongo/date@1",
+                  "kind": "scalar"
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "mongo/string@1",
+                  "kind": "scalar"
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "mongo/objectId@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId"
+                  ],
+                  "targetFields": [
+                    "_id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "__unbound__"
+                }
+              }
+            },
+            "storage": {
+              "collection": "sessions"
             }
           },
           "User": {
@@ -86,15 +150,15 @@
                   "kind": "scalar"
                 }
               },
-              "name": {
-                "nullable": true,
+              "passwordHash": {
+                "nullable": false,
                 "type": {
                   "codecId": "mongo/string@1",
                   "kind": "scalar"
                 }
               },
               "username": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "mongo/string@1",
                   "kind": "scalar"
@@ -109,7 +173,7 @@
                     "_id"
                   ],
                   "targetFields": [
-                    "authorId"
+                    "creatorId"
                   ]
                 },
                 "to": {
@@ -141,14 +205,14 @@
                     "_id": {
                       "bsonType": "objectId"
                     },
-                    "authorId": {
-                      "bsonType": "objectId"
-                    },
                     "content": {
                       "bsonType": [
                         "null",
                         "string"
                       ]
+                    },
+                    "creatorId": {
+                      "bsonType": "objectId"
                     },
                     "title": {
                       "bsonType": "string"
@@ -156,8 +220,59 @@
                   },
                   "required": [
                     "_id",
-                    "authorId",
+                    "creatorId",
                     "title"
+                  ]
+                },
+                "kind": "mongo-validator",
+                "validationAction": "error",
+                "validationLevel": "strict"
+              }
+            },
+            "sessions": {
+              "indexes": [
+                {
+                  "keys": [
+                    {
+                      "direction": 1,
+                      "field": "tokenHash"
+                    },
+                    {
+                      "direction": 1,
+                      "field": "expiresAt"
+                    }
+                  ],
+                  "kind": "mongo-index"
+                }
+              ],
+              "kind": "mongo-collection",
+              "validator": {
+                "jsonSchema": {
+                  "additionalProperties": false,
+                  "bsonType": "object",
+                  "properties": {
+                    "_id": {
+                      "bsonType": "objectId"
+                    },
+                    "createdAt": {
+                      "bsonType": "date"
+                    },
+                    "expiresAt": {
+                      "bsonType": "date"
+                    },
+                    "tokenHash": {
+                      "bsonType": "string"
+                    },
+                    "userId": {
+                      "bsonType": "objectId"
+                    }
+                  },
+                  "required": [
+                    "_id",
+                    "createdAt",
+                    "expiresAt",
+                    "tokenHash",
+                    "userId"
                   ]
                 },
                 "kind": "mongo-validator",
@@ -176,6 +291,19 @@
                   ],
                   "kind": "mongo-index",
                   "unique": true
+                },
+                {
+                  "keys": [
+                    {
+                      "direction": 1,
+                      "field": "email"
+                    },
+                    {
+                      "direction": 1,
+                      "field": "username"
+                    }
+                  ],
+                  "kind": "mongo-index"
                 }
               ],
               "kind": "mongo-collection",
@@ -190,22 +318,18 @@
                     "email": {
                       "bsonType": "string"
                     },
-                    "name": {
-                      "bsonType": [
-                        "null",
-                        "string"
-                      ]
+                    "passwordHash": {
+                      "bsonType": "string"
                     },
                     "username": {
-                      "bsonType": [
-                        "null",
-                        "string"
-                      ]
+                      "bsonType": "string"
                     }
                   },
                   "required": [
                     "_id",
-                    "email"
+                    "email",
+                    "passwordHash",
+                    "username"
                   ]
                 },
                 "kind": "mongo-validator",
@@ -219,7 +343,7 @@
         "kind": "mongo-database"
       }
     },
-    "storageHash": "1b32cdae5987d45006e4c8a26db4f87732e4c164ea47402253364582b1818b73"
+    "storageHash": "0836c57572320e286b6a4422a320bda7e34eae8403f3944ec9e53ba772f5ecb4"
   },
   "capabilities": {},
   "extensions": {},

@@ -1,59 +1,59 @@
 {
-  "name": "social",
-  "private": true,
-  "version": "0.0.1",
-  "packageManager": "npm@11.6.0",
-  "type": "module",
-  "scripts": {
-    "build": "vite build",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "composer:deploy": "prisma deploy module.ts",
-    "composer:dev": "prisma dev module.ts",
-    "contract:emit": "prisma contract emit",
-    "db:init": "prisma db init",
-    "db:update": "prisma db update",
-    "db:verify": "prisma db verify",
-    "deploy": "npm run build && npm run composer:deploy",
-    "dev": "vite dev",
-    "dev:composer": "npm run build && npm run composer:dev",
-    "migrate": "prisma db migrate",
-    "migration:plan": "prisma migration plan",
-    "migration:show": "prisma migration show",
-    "migration:status": "prisma migration status",
-    "prepare": "svelte-kit sync || echo ''",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "@sveltejs/adapter-node": "^5.3.2",
-    "@sveltejs/kit": "^2.50.2",
-    "@sveltejs/vite-plugin-svelte": "^7.3.0",
-    "@types/node": "^25.6.2",
-    "prisma": "8.0.0-rc.18",
-    "svelte": "^5.51.0",
-    "svelte-check": "^4.4.2",
-    "tsx": "^4.7.1",
-    "typescript": "^5.9.3",
-    "vite": "^8.1.2"
-  },
-  "dependencies": {
-    "@prisma/composer": "0.24.0",
-    "@prisma/composer-prisma-cloud": "0.24.0",
-    "@prisma/orm-mongo": "8.0.0-rc.12",
-    "alchemy": "2.0.0-beta.78",
-    "arktype": "^2.2.3",
-    "mongodb": "^7.1.0"
-  },
-  "overrides": {
-    "effect": "4.0.0-rc.115",
-    "@effect/platform-bun": "4.0.0-rc.115",
-    "@effect/platform-node": "4.0.0-rc.115",
-    "@effect/platform-node-shared": "4.0.0-rc.115",
-    "@effect/sql-d1": "4.0.0-rc.115",
-    "@effect/sql-sqlite-do": "4.0.0-rc.115",
-    "@effect/vitest": "4.0.0-rc.115",
-    "alchemy": {
-      "mongodb": "^7.1.0"
-    }
-  }
+	"name": "social",
+	"private": true,
+	"version": "0.0.1",
+	"packageManager": "npm@11.6.0",
+	"type": "module",
+	"scripts": {
+		"build": "vite build",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"composer:deploy": "prisma deploy module.ts",
+		"composer:dev": "prisma dev module.ts",
+		"contract:emit": "prisma contract emit",
+		"db:init": "prisma db init",
+		"db:update": "prisma db update",
+		"db:verify": "prisma db verify",
+		"dev": "vite dev",
+		"migrate": "prisma db migrate",
+		"migration:plan": "prisma migration plan",
+		"migration:show": "prisma migration show",
+		"migration:status": "prisma migration status",
+		"prepare": "svelte-kit sync || echo ''",
+		"preview": "vite preview"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-node": "^6.0.0",
+		"@sveltejs/kit": "^3.1.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@types/node": "^26.6.5",
+		"prisma": "8.0.0-rc.18",
+		"svelte": "^5.57.2",
+		"svelte-check": "^4.7.7",
+		"tsx": "^4.23.15",
+		"typescript": "^6.0.0",
+		"vite": "^8.3.5"
+	},
+	"dependencies": {
+		"@prisma/orm-mongo": "8.0.0-rc.12",
+		"argon2": "^0.45.1",
+		"dotenv": "^18.0.8",
+		"mongodb": "^7.7.0"
+	},
+	"overrides": {
+		"effect": "4.0.0-rc.115",
+		"@effect/platform-bun": "4.0.0-rc.115",
+		"@effect/platform-node": "4.0.0-rc.115",
+		"@effect/platform-node-shared": "4.0.0-rc.115",
+		"@effect/sql-d1": "4.0.0-rc.115",
+		"@effect/sql-sqlite-do": "4.0.0-rc.115",
+		"@effect/vitest": "4.0.0-rc.115",
+		"alchemy": {
+			"mongodb": "^7.1.0"
+		}
+	},
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
+	}
 }

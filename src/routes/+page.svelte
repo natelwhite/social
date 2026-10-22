@@ -1,179 +1,90 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
-
-	let { data }: PageProps = $props();
+	let { form }: PageProps = $props();
 </script>
 
-<svelte:head>
-	<title>create-prisma + sveltekit</title>
-</svelte:head>
+<section>
+	<h1>Create an account</h1>
 
-<script lang="ts" module>
-	const formatter = new Intl.DateTimeFormat('en', {
-		dateStyle: 'medium',
-		timeStyle: 'short'
-	});
-</script>
-
-<section class="shell">
-	<div class="hero">
-		<p class="eyebrow">SvelteKit + Prisma 8</p>
-		<h1>Users from your database, loaded on the server.</h1>
-		<p class="lede">
-			This page reads from <code>+page.server.ts</code> using the Prisma 8 helper in
-			<code>src/prisma/users.ts</code>.
-		</p>
-	</div>
-
-	<div class="panel">
-		<div class="panel-header">
-			<h2>Seeded users</h2>
-			<span>{data.users?.length ?? 0} total</span>
+	<form method="POST" action="?/signup" use:enhance>
+		<div>
+			<label for="signup-email">Email</label>
+			<input
+				id="signup-email"
+				name="email"
+				type="email"
+				autocomplete="email"
+				value={form?.form === 'signup' ? form.email : ''}
+				required
+			/>
 		</div>
 
-		{#if !data.users}
-			<p class="empty">
-				Could not query users yet. Run <code>contract:emit</code> and apply your schema, then
-				refresh.
-			</p>
-		{:else if data.users.length === 0}
-			<p class="empty">No users found.</p>
-		{:else}
-			<ul class="users">
-				{#each data.users as user}
-					<li>
-						<div>
-							<strong>{user.name ?? 'Unnamed user'}</strong>
-							<p>{user.username ? `@${user.username}` : user.email}</p>
-						</div>
-						{#if user.createdAt}
-							<time datetime={new Date(user.createdAt).toISOString()}>
-								{formatter.format(new Date(user.createdAt))}
-							</time>
-						{:else}
-							<span class="muted">No timestamp</span>
-						{/if}
-					</li>
-				{/each}
-			</ul>
+		<div>
+			<label for="signup-username">Username</label>
+			<input
+				id="signup-username"
+				name="username"
+				type="text"
+				autocomplete="username"
+				minlength="3"
+				maxlength="30"
+				value={form?.form === 'signup' ? form.username : ''}
+				required
+			/>
+		</div>
+
+		<div>
+			<label for="signup-password">Password</label>
+			<input
+				id="signup-password"
+				name="password"
+				type="password"
+				autocomplete="new-password"
+				minlength="4"
+				required
+			/>
+		</div>
+
+		{#if form?.form === 'signup' && form.message}
+			<p role="alert">{form.message}</p>
 		{/if}
-	</div>
+
+		<button type="submit">Create account</button>
+	</form>
 </section>
 
-<style>
-	:global(body) {
-		margin: 0;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-		background: #fff;
-		color: #111;
-	}
+<section>
+	<h1>Log in</h1>
 
-	.shell {
-		max-width: 40rem;
-		margin: 0 auto;
-		padding: 3rem 1.5rem;
-	}
+	<form method="POST" action="?/login" use:enhance>
+		<div>
+			<label for="login-email">Email</label>
+			<input
+				id="login-email"
+				name="email"
+				type="email"
+				autocomplete="email"
+				value={form?.form === 'login' ? form.email : ''}
+				required
+			/>
+		</div>
 
-	.hero {
-		margin-bottom: 1.5rem;
-	}
+		<div>
+			<label for="login-password">Password</label>
+			<input
+				id="login-password"
+				name="password"
+				type="password"
+				autocomplete="current-password"
+				required
+			/>
+		</div>
 
-	.eyebrow {
-		margin: 0 0 0.5rem;
-		color: #666;
-		font-size: 0.75rem;
-		font-weight: 600;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-	}
+		{#if form?.form === 'login' && form.message}
+			<p role="alert">{form.message}</p>
+		{/if}
 
-	h1 {
-		margin: 0;
-		font-size: 1.25rem;
-		font-weight: 600;
-		line-height: 1.4;
-	}
-
-	.lede {
-		margin: 0.5rem 0 0;
-		color: #666;
-		font-size: 0.875rem;
-		line-height: 1.6;
-	}
-
-	.panel {
-		border: 1px solid #e5e5e5;
-		border-radius: 0.5rem;
-		padding: 1rem;
-	}
-
-	.panel-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		margin-bottom: 0.75rem;
-	}
-
-	h2 {
-		margin: 0;
-		font-size: 0.875rem;
-		font-weight: 600;
-	}
-
-	.panel-header span,
-	.empty,
-	.muted,
-	time {
-		color: #888;
-		font-size: 0.8rem;
-	}
-
-	.panel p {
-		color: #666;
-		font-size: 0.8rem;
-	}
-
-	.users {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 0.5rem;
-	}
-
-	.users li {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 0.625rem 0.75rem;
-		border: 1px solid #eee;
-		border-radius: 0.375rem;
-	}
-
-	.users p {
-		margin: 0.125rem 0 0;
-	}
-
-	time {
-		font-size: 0.75rem;
-		white-space: nowrap;
-	}
-
-	code {
-		padding: 0.125rem 0.25rem;
-		border-radius: 0.25rem;
-		background: #f5f5f5;
-		font-family: SFMono-Regular, Consolas, monospace;
-		font-size: 0.875em;
-	}
-
-	@media (max-width: 640px) {
-		.users li,
-		.panel-header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-	}
-</style>
+		<button type="submit">Log in</button>
+	</form>
+</section>

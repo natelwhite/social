@@ -1,17 +1,16 @@
+import { config } from "dotenv";
+config();
 import { definePrismaConfig } from "prisma/config";
 import { defineConfig as ormConfig } from "@prisma/orm-mongo/config";
 
 export default definePrismaConfig({
-  skills: {
-    agents: [],
-  },
-  orm: ormConfig({
-    contract: "./src/prisma/contract.prisma",
-    db: {
-      connection: process.env.MONGODB_URL!,
-    },
-  }),
-  composer: {
-    configPath: "./prisma-composer.config.ts",
-  },
+	skills: {
+		agents: [],
+	},
+	orm: ormConfig({
+		contract: "./src/prisma/contract.prisma",
+		db: {
+			connection: process.env.DATABASE_URL!,
+		},
+	}),
 });

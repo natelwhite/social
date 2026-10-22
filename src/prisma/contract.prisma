@@ -3,17 +3,29 @@
 model User {
   id       ObjectId @id @map("_id")
   email    String   @unique
-  username String?
-  name     String?
-  posts    Post[]
+  username String
+  passwordHash String
+  posts Post[]
   @@map("users")
+  @@index([email, username])
+}
+
+model Session {
+  id        ObjectId @id @map("_id")
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime
+  userId    ObjectId
+  user      User @relation(fields: [userId], references: [id])
+  @@map("sessions")
+  @@index([tokenHash, expiresAt])
 }
 
 model Post {
   id       ObjectId @id @map("_id")
   title    String
   content  String?
-  author   User     @relation(fields: [authorId], references: [id])
-  authorId ObjectId
+  creatorId ObjectId
+  creator   User     @relation(fields: [creatorId], references: [id])
   @@map("posts")
 }
