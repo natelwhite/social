@@ -28,7 +28,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@types/node": "^26.6.5",
 		"prisma": "8.0.0-rc.18",
-		"svelte": "^5.57.2",
+		"svelte": "^5.57.3",
 		"svelte-check": "^4.7.7",
 		"tsx": "^4.23.15",
 		"typescript": "^6.0.0",
@@ -37,7 +37,7 @@
 	"dependencies": {
 		"@prisma/orm-mongo": "8.0.0-rc.12",
 		"argon2": "^0.45.1",
-		"dotenv": "^18.0.8",
+		"dotenv": "^18.0.9",
 		"mongodb": "^7.7.0"
 	},
 	"overrides": {
