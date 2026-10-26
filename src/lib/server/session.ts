@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { db } from "../../prisma/db";
+import { db } from "#prisma/db.ts";
 
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
@@ -8,6 +8,7 @@ type SessionRecord = {
 	tokenHash: string;
 	userId: string;
 	expiresAt: Date;
+	createdAt: Date;
 };
 
 // hash a random token
@@ -18,27 +19,24 @@ function hashSessionToken(token: string): string {
 // create a session from a userId
 export function createSession(userId: string): Promise<string> {
 	const sessionToken = randomBytes(32).toString("base64url");
-	const tokenHash = hashSessionToken(sessionToken);
-	const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+	const session: SessionRecord = {
+		tokenHash: hashSessionToken(sessionToken),
+		userId: userId,
+		expiresAt: new Date(Date.now() + SESSION_DURATION_MS),
+		createdAt: new Date()
+	}
 	// db query -> create new session with given userId
 	return db.orm.sessions
-		.create({
-			tokenHash,
-			userId,
-			expiresAt,
-			createdAt: new Date(),
-		})
+		.create(session)
 		.then(() => {
-			// Return the raw token only to the caller.
-			// Store only its hash in MongoDB.
+			// Return the raw token to the caller.
+			// Store its hash in MongoDB.
 			return sessionToken;
 		});
 }
 
 // get the userId from a session token
-export function getUserIdFromSession(
-	sessionToken: string | undefined,
-): Promise<string | null> {
+export function getUserIdFromSession(sessionToken: string | undefined): Promise<string | null> {
 	if (!sessionToken) {
 		return Promise.resolve(null);
 	}

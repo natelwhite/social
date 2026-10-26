@@ -1,5 +1,5 @@
 import argon2 from "argon2";
-import { db } from "../../prisma/db";
+import { db } from "#prisma/db.ts";
 
 export type PublicUser = {
 	id: string;
@@ -19,7 +19,7 @@ type LoginInput = {
 };
 
 // create a user w/out password data from user with password data
-function toPublicUser(user: {
+export function toPublicUser(user: {
 	_id: string;
 	email: string;
 	username: string;

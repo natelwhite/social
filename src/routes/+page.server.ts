@@ -1,9 +1,13 @@
 import type { Cookies } from "@sveltejs/kit";
 import { fail, redirect } from "@sveltejs/kit";
-import type { Actions } from "./$types";
+import type { Actions, PageServerLoad } from "./$types";
 
 import { createUser, loginUser } from "#lib/server/auth.ts";
-import { createSession } from "#lib/server/session.ts";
+import { createSession, deleteSession } from "#lib/server/session.ts";
+
+export const load: PageServerLoad = ({ locals }) => (
+	{ user: locals.user }
+);
 
 const SESSION_COOKIE_NAME = "session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30; // 30 days
@@ -107,4 +111,13 @@ export const actions = {
 
 		throw redirect(303, "/");
 	},
+
+	logout: async({ cookies }) => {
+		const token = cookies.get(SESSION_COOKIE_NAME);
+		if (token) {
+			await deleteSession(token);
+		}
+		cookies.delete(SESSION_COOKIE_NAME, { path: "/" });
+		throw redirect(303, "/");
+	}
 } satisfies Actions;

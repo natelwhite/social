@@ -13,7 +13,6 @@ export const db = databaseUrl
 let connection: Promise<void> | undefined;
 
 export function connectDatabase(): Promise<void> {
-	console.log(databaseUrl);
 	connection ??= db
 		.connect()
 		.then(() => undefined)

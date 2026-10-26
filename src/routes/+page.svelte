@@ -1,9 +1,16 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
-	let { form }: PageProps = $props();
+	let { form, data }: PageProps = $props();
 </script>
-
+{#if data.user}
+<section>
+	<p>Signed in as @{data.user.username}</p>
+	<form method="POST" action="?/logout" use:enhance>
+		<button type="submit">Log out</button>
+	</form>
+</section>
+{:else}
 <section>
 	<h1>Create an account</h1>
 
@@ -88,3 +95,4 @@
 		<button type="submit">Log in</button>
 	</form>
 </section>
+{/if}
