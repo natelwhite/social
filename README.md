@@ -1,37 +1,16 @@
-# social
+# Developing the application
 
-A minimal svelte app with Prisma 8 and Prisma Composer.
+## Install:
+
+- NPM
+- MongoDB
+- Navigate to project directory within a terminal and run `npm i` to install packages
+
+## Configuration
+
+- Set `DATABASE_URL` within `./.env` to your MonogDB connection string such as `mongodb://USERNAME:PASSWORD@localhost:27017/DATABASE_NAME?authSource=AUTH_DATABASE`
+  - Words in all caps must be changed to the application value for your MongoDB instance.
 
 ## Run locally
 
-```bash
-npm run dev:composer
-```
-
-This builds the app and starts it with Composer. PostgreSQL projects get a local Prisma Postgres database and apply the contract automatically.
-
-## Deploy
-
-```bash
-npm run deploy
-```
-
-The deploy script builds the framework output, provisions Prisma Postgres when selected, applies migrations, and deploys the app to Prisma Compute.
-
-The starter users are inserted idempotently from `src/prisma/seed.ts` on the first database query through the Composer service binding.
-
-MongoDB is not provisioned by Composer. Set `MONGODB_URL` before running Composer locally or deploying.
-
-## Prisma
-
-- Contract: `src/prisma/contract.prisma`
-- Prisma and Composer config: `prisma.config.ts`
-- Composer app: `module.ts` and `service.ts`
-
-After changing the contract, run:
-
-```bash
-npm run contract:emit
-```
-
-To use the framework's development server directly, run `npm run dev`. This direct mode requires `DATABASE_URL`.
+- Run with live updates from your changes: `npm run dev`
