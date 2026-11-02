@@ -6,13 +6,9 @@ import {
 	getPublicUserBySessionToken,
 } from "#lib/server/session.ts";
 
-function startJobs() {
-	connectDatabase();
-}
-
 export const init: ServerInit = async () => {
 	if (!building) {
-		startJobs();
+		await connectDatabase();
 	}
 };
 
@@ -24,7 +20,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const user = await getPublicUserBySessionToken(token);
 	if (!user) {
 		event.cookies.delete("session", { path: "/" });
-		deleteSession(token);
 		return resolve(event);
 	}
 	event.locals.user = user;

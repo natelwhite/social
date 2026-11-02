@@ -31,6 +31,7 @@ export async function getSessionByToken(
 				// delete session
 				try {
 					await db.orm.sessions.where({ tokenHash }).delete();
+					return null;
 				} catch (err) {
 					console.error("Failed to delete session", err);
 					throw new Error("Unable to delete session. Please try again.");
