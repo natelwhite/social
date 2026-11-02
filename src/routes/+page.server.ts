@@ -4,8 +4,7 @@ import type { Actions, PageServerLoad } from "./$types";
 
 import {
 	registerUser,
-	loginUserWithEmail,
-	loginUserWithUsername,
+	loginUserWithUsernameOrEmail,
 } from "#lib/server/auth.ts";
 import { createSession, deleteSession } from "#lib/server/session.ts";
 
@@ -80,11 +79,11 @@ export const actions = {
 	login: async ({ request, cookies }) => {
 		const formData = await request.formData();
 
-		const email = getString(formData, "email");
+		const identifier = getString(formData, "identifier");
 		const password = getString(formData, "password");
 
 		try {
-			const user = await loginUserWithEmail(email, password);
+			const user = await loginUserWithUsernameOrEmail(identifier, password);
 
 			const sessionToken = await createSession(user.id);
 
@@ -94,7 +93,7 @@ export const actions = {
 			return fail(400, {
 				form: "login",
 				message: "Invalid email or password.",
-				email,
+				identifier,
 			});
 		}
 

@@ -66,13 +66,13 @@
 
 	<form method="POST" action="?/login" use:enhance>
 		<div>
-			<label for="login-email">Email</label>
+			<label for="login-identifier">Username or Email</label>
 			<input
-				id="login-email"
-				name="email"
-				type="email"
-				autocomplete="email"
-				value={form?.form === 'login' ? form.email : ''}
+				id="login-identifier"
+				name="identifier"
+				type="text"
+				autocomplete="username"
+				value={form?.form === 'login' ? form.identifier : ''}
 				required
 			/>
 		</div>

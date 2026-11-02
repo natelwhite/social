@@ -73,7 +73,7 @@ export async function deleteSession(token: string): Promise<void> {
 }
 
 // get the userId from a session token
-export async function getUserIdFromSessionToken(
+export async function getUserIdBySessionToken(
 	token: string,
 ): Promise<string | null> {
 	// find session
@@ -87,7 +87,7 @@ export async function getUserIdFromSessionToken(
 			if (session.expiresAt.getTime() <= Date.now()) {
 				await deleteSession(token);
 			}
-			return String(session.userId);
+			return session.userId;
 		}
 	} catch (err) {
 		console.error("Failed to lookup session", err);
