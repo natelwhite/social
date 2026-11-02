@@ -1,3 +1,7 @@
+import {
+	MongoFieldFilter,
+	MongoOrExpr,
+} from "@prisma/orm-mongo/query-ast/execution";
 import { db } from "#prisma/db.ts";
 
 const findUserQuery = (id: string) => {
@@ -15,27 +19,61 @@ export type PublicUser = {
 // create a user w/out password data from user with password data
 export function toPublicUser(user: User): PublicUser {
 	if (!user) {
-		throw new Error("toPublicUser failed");
+		throw new Error("toPublicUser failed!");
+	} else {
+		return {
+			id: user._id,
+			email: user.email,
+			username: user.username,
+		};
 	}
-	return {
-		id: user._id,
-		email: user.email,
-		username: user.username,
-	};
 }
 
-export async function getUserById(id: string): Promise<PublicUser | null> {
+// Server-side only!!
+export async function getUserById(id: string): Promise<User | null> {
 	try {
 		const user = await db.orm.users.where({ _id: id }).first();
 		if (!user) {
 			return null;
 		} else {
-			return toPublicUser(user);
+			return user;
 		}
 	} catch (err) {
 		console.error("Failed to find user.", err);
 		throw new Error("Database error.");
 	}
+}
+
+export async function getPublicUserById(
+	id: string,
+): Promise<PublicUser | null> {
+	return toPublicUser(await getUserById(id));
+}
+
+// Servier-side only!!
+export async function getUserByUsernameOrEmail(
+	identifier: string,
+): Promise<User | null> {
+	try {
+		const user = await db.orm.users
+			.where(
+				MongoOrExpr.of([
+					MongoFieldFilter.eq("username", identifier),
+					MongoFieldFilter.eq("email", identifier),
+				]),
+			)
+			.first();
+		return user;
+	} catch (err) {
+		console.error("getUserByUsernameOrEmail failed", err);
+		throw new Error("Query error");
+	}
+}
+
+export async function getPublicUserByUsernameOrEmail(
+	identifier: string,
+): Promise<PublicUser | null> {
+	return toPublicUser(await getUserByUsernameOrEmail(identifier));
 }
 
 // Server-side only!!
@@ -58,12 +96,7 @@ export async function getUserByUsername(
 export async function getPublicUserByUsername(
 	username: string,
 ): Promise<PublicUser | null> {
-	const user = await getUserByUsername(username);
-	if (!user) {
-		return null;
-	} else {
-		return toPublicUser(user);
-	}
+	return toPublicUser(await getUserByUsername(username));
 }
 
 // Server-side only!!
@@ -84,12 +117,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 export async function getPublicUserByEmail(
 	email: string,
 ): Promise<PublicUser | null> {
-	const user = await getUserByEmail(email);
-	if (!user) {
-		return null;
-	} else {
-		return toPublicUser(user);
-	}
+	return toPublicUser(await getUserByEmail(email));
 }
 
 export async function newUser(

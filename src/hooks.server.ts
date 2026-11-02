@@ -1,8 +1,10 @@
 import type { ServerInit, Handle } from "@sveltejs/kit/hooks";
 import { building } from "$app/env";
 import { connectDatabase } from "#prisma/db.ts";
-import { getUserById } from "#lib/server/user.ts";
-import { deleteSession, getUserIdBySessionToken } from "#lib/server/session.ts";
+import {
+	deleteSession,
+	getPublicUserBySessionToken,
+} from "#lib/server/session.ts";
 
 function startJobs() {
 	connectDatabase();
@@ -19,13 +21,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (!token) {
 		return resolve(event);
 	}
-	const user_id = await getUserIdBySessionToken(token);
-	if (!user_id) {
-		event.cookies.delete("session", { path: "/" });
-		deleteSession(token);
-		return resolve(event);
-	}
-	const user = await getUserById(user_id);
+	const user = await getPublicUserBySessionToken(token);
 	if (!user) {
 		event.cookies.delete("session", { path: "/" });
 		deleteSession(token);

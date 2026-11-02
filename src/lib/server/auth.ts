@@ -5,6 +5,7 @@ import {
 	newUser,
 	getUserByEmail,
 	getUserByUsername,
+	getUserByUsernameOrEmail,
 } from "./user";
 
 export async function registerUser(
@@ -73,24 +74,15 @@ export async function loginUserWithUsernameOrEmail(
 	if (!identifier) {
 		throw new Error("Invalid username or email");
 	}
-	const username_match = await getUserByUsername(identifier);
-	const email_match = await getUserByEmail(identifier);
+	const user_match = await getUserByUsernameOrEmail(identifier);
 	// if no user with identifier
-	if (!username_match && !email_match) {
+	if (!user_match) {
 		throw new Error("Username or email not found");
 	} else {
-		if (email_match) {
-			if (await loginUser(email_match, password)) {
-				return toPublicUser(email_match);
-			} else {
-				throw new Error("Incorrect password");
-			}
+		if (await loginUser(user_match, password)) {
+			return toPublicUser(user_match);
 		} else {
-			if (await loginUser(username_match, password)) {
-				return toPublicUser(username_match);
-			} else {
-				throw new Error("Incorrect password");
-			}
+			throw new Error("Incorrect password");
 		}
 	}
 }

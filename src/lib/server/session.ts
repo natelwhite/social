@@ -2,6 +2,9 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { db } from "#prisma/db.ts";
 
+import type { PublicUser } from "./user";
+import { getPublicUserById } from "./user";
+
 const findSessionQuery = (id: string) => {
 	return db.orm.sessions.where({ _id: id }).first();
 };
@@ -73,9 +76,9 @@ export async function deleteSession(token: string): Promise<void> {
 }
 
 // get the userId from a session token
-export async function getUserIdBySessionToken(
+export async function getPublicUserBySessionToken(
 	token: string,
-): Promise<string | null> {
+): Promise<PublicUser | null> {
 	// find session
 	try {
 		const session = await getSessionByToken(token);
@@ -86,8 +89,9 @@ export async function getUserIdBySessionToken(
 			// if session expired
 			if (session.expiresAt.getTime() <= Date.now()) {
 				await deleteSession(token);
+				return null;
 			}
-			return session.userId;
+			return await getPublicUserById(session.userId);
 		}
 	} catch (err) {
 		console.error("Failed to lookup session", err);
