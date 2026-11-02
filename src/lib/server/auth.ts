@@ -1,5 +1,6 @@
 import argon2 from "argon2";
-import { db } from "#prisma/db.ts";
+import type { User } from "./user";
+import { newUser, getUserByEmail, getUserByUsername } from "./user";
 
 export type PublicUser = {
 	id: string;
@@ -7,23 +8,11 @@ export type PublicUser = {
 	username: string;
 };
 
-type CreateUserInput = {
-	email: string;
-	username: string;
-	password: string;
-};
-
-type LoginInput = {
-	email: string;
-	password: string;
-};
-
 // create a user w/out password data from user with password data
-export function toPublicUser(user: {
-	_id: string;
-	email: string;
-	username: string;
-}): PublicUser {
+export function toPublicUser(user: User): PublicUser {
+	if (!user) {
+		throw new Error("toPublicUser failed");
+	}
 	return {
 		id: user._id,
 		email: user.email,
@@ -31,60 +20,102 @@ export function toPublicUser(user: {
 	};
 }
 
-export function createUser(input: CreateUserInput): Promise<PublicUser> {
-	const email = input.email.trim().toLowerCase();
-	const username = input.username.trim().toLowerCase();
-	const password = input.password;
-	// if no email || username || password, return error
+export async function registerUser(
+	email: string,
+	username: string,
+	password: string,
+): Promise<PublicUser> {
+	email = email.trim().toLowerCase();
+	username = username.trim().toLowerCase();
+	// validate data
 	if (!email || !username || !password) {
-		return Promise.reject(new Error("Missing required fields"));
+		throw new Error("Missing required fields");
 	}
-	// if password invalid, return error
 	if (password.length < 4) {
-		return Promise.reject(new Error("Password must be at least 4 characters"));
+		throw new Error("Password must be at least 4 characters");
 	}
-	// if username invalid, return error
 	if (!/^[a-z0-9_]{3,30}$/.test(username)) {
-		return Promise.reject(new Error("Invalid username"));
+		throw new Error("Invalid username");
 	}
-	// hash password and create user
-	return argon2
-		.hash(password, { type: argon2.argon2id })
-		.then((passwordHash) => {
-			return db.orm.users.create({
-				email,
-				username,
-				passwordHash,
-			});
-		})
-		.then(toPublicUser);
+	// check email & username availability
+	const email_match = await getUserByEmail(email);
+	if (email_match) {
+		throw new Error("Duplicate email");
+	}
+	const username_match = await getUserByUsername(username);
+	if (username_match) {
+		throw new Error("Duplicate username");
+	}
+	// hash password
+	let passwordHash: string;
+	try {
+		passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+	} catch (err: any) {
+		console.error("registerUser failed", err);
+		throw new Error("Unable to create account. Please try again.");
+	}
+	const user = await newUser(email, username, passwordHash);
+	if (!user) {
+		throw new Error("registerUser failed");
+	} else {
+		return toPublicUser(user);
+	}
 }
 
-export function loginUser(input: LoginInput): Promise<PublicUser> {
-	const email = input.email.trim().toLowerCase();
-	const password = input.password;
+async function loginUser(user: User, password: string): Promise<PublicUser> {
+	// validate password
+	if (!user) {
+		throw new Error("User not found");
+	}
+	try {
+		const validPass = await argon2.verify(user.passwordHash, password);
+		if (!validPass) {
+			throw new Error("Invalid email or password");
+		}
+		return toPublicUser(user);
+	} catch (err) {
+		console.error("Password verification failed", err);
+		throw new Error("Unable to login");
+	}
+}
+
+export async function loginUserWithEmail(
+	email: string,
+	password: string,
+): Promise<PublicUser> {
+	email = email.trim().toLowerCase();
 	// if no email || password given, return error
 	if (!email || !password) {
-		return Promise.reject(new Error("Invalid email or password"));
+		throw new Error("Invalid email or password");
 	}
-	// find user that matches email
-	return db.orm.users
-		.where({ email })
-		.first()
-		.then((user) => {
-			if (!user) {
-				// if no user with email
-				throw new Error("Invalid email or password");
-			}
-			return argon2
-				.verify(user.passwordHash, password)
-				.then((validPassword) => {
-					if (!validPassword) {
-						// if password doesn't match
-						throw new Error("Invalid email or password");
-					}
-					console.log(`Logged in as ${user.username}`);
-					return toPublicUser(user);
-				});
-		});
+	// find user with email
+	let email_match: User = null;
+	try {
+		email_match = await getUserByEmail(email);
+	} catch (err) {
+		console.error("loginUserWithEmail failed", err);
+		throw new Error("Unable to login");
+	}
+	if (!email_match) {
+		throw new Error("Email not found");
+	} else {
+		return loginUser(email_match, password);
+	}
+}
+
+export async function loginUserWithUsername(
+	username: string,
+	password: string,
+): Promise<PublicUser> {
+	// if no username || password given, return error
+	if (!username || !password) {
+		throw new Error("Invalid email or password");
+	}
+	// find user with username
+	const username_match = await getUserByUsername(username);
+	if (!username_match) {
+		throw new Error("Username not found");
+	} else {
+		return loginUser(username_match, password);
+	}
 }

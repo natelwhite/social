@@ -2,12 +2,14 @@ import type { Cookies } from "@sveltejs/kit";
 import { fail, redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 
-import { createUser, loginUser } from "#lib/server/auth.ts";
+import {
+	registerUser,
+	loginUserWithEmail,
+	loginUserWithUsername,
+} from "#lib/server/auth.ts";
 import { createSession, deleteSession } from "#lib/server/session.ts";
 
-export const load: PageServerLoad = ({ locals }) => (
-	{ user: locals.user }
-);
+export const load: PageServerLoad = ({ locals }) => ({ user: locals.user });
 
 const SESSION_COOKIE_NAME = "session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30; // 30 days
@@ -15,20 +17,6 @@ const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30; // 30 days
 function getString(formData: FormData, name: string): string {
 	const value = formData.get(name);
 	return typeof value === "string" ? value : "";
-}
-
-function isDuplicateKeyError(error: unknown): boolean {
-	if (!(error instanceof Error)) {
-		return false;
-	}
-
-	const message = error.message.toLowerCase();
-
-	return (
-		message.includes("duplicate") ||
-		message.includes("unique") ||
-		message.includes("already exists")
-	);
 }
 
 function setSessionCookie(cookies: Cookies, token: string) {
@@ -50,36 +38,40 @@ export const actions = {
 		const password = getString(formData, "password");
 
 		try {
-			const user = await createUser({
-				email,
-				username,
-				password,
-			});
+			const user = await registerUser(email, username, password);
 
 			const sessionToken = await createSession(user.id);
 
 			setSessionCookie(cookies, sessionToken);
-		} catch (error) {
-			if (isDuplicateKeyError(error)) {
+		} catch (error: any) {
+			// detect duplicate key error code
+			if (error.message === "Duplicate email") {
 				return fail(409, {
 					form: "signup",
-					message: "That email or username is already in use.",
+					message:
+						"Email is already is already associated with an account. Try logging in.",
+					email,
+					username,
+				});
+			} else if (error.message === "Duplicate username") {
+				return fail(409, {
+					form: "signup",
+					message: "Username taken!",
+					email,
+					username,
+				});
+			} else {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Unable to create your account.";
+				return fail(400, {
+					form: "signup",
+					message,
 					email,
 					username,
 				});
 			}
-
-			const message =
-				error instanceof Error
-					? error.message
-					: "Unable to create your account.";
-
-			return fail(400, {
-				form: "signup",
-				message,
-				email,
-				username,
-			});
 		}
 
 		throw redirect(303, "/");
@@ -92,10 +84,7 @@ export const actions = {
 		const password = getString(formData, "password");
 
 		try {
-			const user = await loginUser({
-				email,
-				password,
-			});
+			const user = await loginUserWithEmail(email, password);
 
 			const sessionToken = await createSession(user.id);
 
@@ -112,12 +101,12 @@ export const actions = {
 		throw redirect(303, "/");
 	},
 
-	logout: async({ cookies }) => {
+	logout: async ({ cookies }) => {
 		const token = cookies.get(SESSION_COOKIE_NAME);
 		if (token) {
 			await deleteSession(token);
 		}
 		cookies.delete(SESSION_COOKIE_NAME, { path: "/" });
 		throw redirect(303, "/");
-	}
+	},
 } satisfies Actions;

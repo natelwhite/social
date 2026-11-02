@@ -2,68 +2,95 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { db } from "#prisma/db.ts";
 
-const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
-
-type SessionRecord = {
-	tokenHash: string;
-	userId: string;
-	expiresAt: Date;
-	createdAt: Date;
+const findSessionQuery = (id: string) => {
+	return db.orm.sessions.where({ _id: id }).first();
 };
+export type Session = Awaited<ReturnType<typeof findSessionQuery>>;
+
+const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
 
 // hash a random token
 function hashSessionToken(token: string): string {
 	return createHash("sha256").update(token).digest("hex");
 }
 
-// create a session from a userId
-export function createSession(userId: string): Promise<string> {
-	const sessionToken = randomBytes(32).toString("base64url");
-	const session: SessionRecord = {
-		tokenHash: hashSessionToken(sessionToken),
-		userId: userId,
-		expiresAt: new Date(Date.now() + SESSION_DURATION_MS),
-		createdAt: new Date()
+export async function getSessionByToken(
+	token: string,
+): Promise<Session | null> {
+	const tokenHash = hashSessionToken(token);
+	try {
+		const session = await db.orm.sessions.where({ tokenHash }).first();
+		if (!session) {
+			return null;
+		} else {
+			// if session expired
+			if (session.expiresAt.getTime() <= Date.now()) {
+				// delete session
+				try {
+					await db.orm.sessions.where({ tokenHash }).delete();
+				} catch (err) {
+					console.error("Failed to delete session", err);
+					throw new Error("Unable to delete session. Please try again.");
+				}
+			}
+			return session;
+		}
+	} catch (err) {
+		console.error("getSessionByToken failed");
+		throw new Error("Unable to find session. Please try again.");
 	}
-	// db query -> create new session with given userId
-	return db.orm.sessions
-		.create(session)
-		.then(() => {
-			// Return the raw token to the caller.
-			// Store its hash in MongoDB.
-			return sessionToken;
+}
+
+// create a session from a userId
+// returns session token
+export async function createSession(userId: string): Promise<string> {
+	const sessionToken = randomBytes(32).toString("base64url");
+	// create session
+	try {
+		await db.orm.sessions.create({
+			tokenHash: hashSessionToken(sessionToken),
+			userId: userId,
+			expiresAt: new Date(Date.now() + SESSION_DURATION_MS),
+			createdAt: new Date(),
 		});
+		return sessionToken;
+	} catch (err) {
+		console.error("Failed to create session", err);
+		throw new Error("Unable to create session. Please try again.");
+	}
+}
+
+// delete session using session token
+export async function deleteSession(token: string): Promise<void> {
+	const tokenHash = hashSessionToken(token);
+	try {
+		await db.orm.sessions.where({ tokenHash }).delete();
+		return undefined;
+	} catch (err) {
+		console.error("deleteSession failed", err);
+		throw new Error("Unable to delete session. Please try again.");
+	}
 }
 
 // get the userId from a session token
-export function getUserIdFromSession(sessionToken: string | undefined): Promise<string | null> {
-	if (!sessionToken) {
-		return Promise.resolve(null);
-	}
-	const tokenHash = hashSessionToken(sessionToken);
-	// db query -> find session and get userId unless session expired
-	return db.orm.sessions
-		.where({ tokenHash })
-		.first()
-		.then((session) => {
-			// if session not found
-			if (!session) {
-				return null;
-			}
-			// if session expired, delete it
+export async function getUserIdFromSessionToken(
+	token: string,
+): Promise<string | null> {
+	// find session
+	try {
+		const session = await getSessionByToken(token);
+		// if session not found
+		if (!session) {
+			return null;
+		} else {
+			// if session expired
 			if (session.expiresAt.getTime() <= Date.now()) {
-				return deleteSession(sessionToken).then(() => null);
+				await deleteSession(token);
 			}
 			return String(session.userId);
-		});
-}
-
-// delete a given session
-export function deleteSession(sessionToken: string): Promise<void> {
-	const tokenHash = hashSessionToken(sessionToken); // get hash
-	// db query -> find session & delete it
-	return db.orm.sessions
-		.where({ tokenHash })
-		.delete()
-		.then(() => undefined);
+		}
+	} catch (err) {
+		console.error("Failed to lookup session", err);
+		throw new Error("Unable to retrieve session. Please try again.");
+	}
 }

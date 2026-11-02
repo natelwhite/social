@@ -1,8 +1,11 @@
-import type { ServerInit, Handle } from '@sveltejs/kit/hooks';
+import type { ServerInit, Handle } from "@sveltejs/kit/hooks";
 import { building } from "$app/env";
 import { connectDatabase } from "#prisma/db.ts";
-import { getUserById } from '#lib/server/user.ts';
-import { deleteSession, getUserIdFromSession } from '#lib/server/session.ts';
+import { getUserById } from "#lib/server/user.ts";
+import {
+	deleteSession,
+	getUserIdFromSessionToken,
+} from "#lib/server/session.ts";
 
 function startJobs() {
 	connectDatabase();
@@ -12,21 +15,25 @@ export const init: ServerInit = async () => {
 	if (!building) {
 		startJobs();
 	}
-}
+};
 
-export const handle: Handle = async ({event, resolve}) => {
+export const handle: Handle = async ({ event, resolve }) => {
 	const token = event.cookies.get("session");
-	return getUserIdFromSession(token)
-		.then((userId) => {
-			return userId ? getUserById(userId) : null;
-		})
-		.then((user) => {
-			event.locals.user = user;
-			if (token && user === undefined) {
-				return deleteSession(token).then(() => {
-					event.cookies.delete("session", {path: "/"});
-				})
-			}
-		})
-		.then(() => resolve(event));
-}
+	if (!token) {
+		return resolve(event);
+	}
+	const user_id = await getUserIdFromSessionToken(token);
+	if (!user_id) {
+		event.cookies.delete("session", { path: "/" });
+		deleteSession(token);
+		return resolve(event);
+	}
+	const user = await getUserById(user_id);
+	if (!user) {
+		event.cookies.delete("session", { path: "/" });
+		deleteSession(token);
+		return resolve(event);
+	}
+	event.locals.user = user;
+	return resolve(event);
+};
